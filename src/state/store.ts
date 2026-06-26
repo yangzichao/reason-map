@@ -84,6 +84,14 @@ interface AppStore {
 
   addEdge: (fromNode: string, toNode: string) => Promise<void>;
   removeEdge: (id: string) => Promise<void>;
+  setEdgeType: (id: string, edgeType: EdgeType) => Promise<void>;
+  setEdgeStrength: (id: string, strength: Strength | null) => Promise<void>;
+
+  runSearch: (query: string) => Promise<void>;
+  clearSearch: () => void;
+  dismissWeakPoints: () => void;
+  addNodeFromChat: (text: string) => Promise<void>;
+  exportCurrentMap: () => Promise<void>;
 
   runForwardInference: () => Promise<void>;
   acceptSuggestion: (s: Suggestion) => Promise<void>;
@@ -132,6 +140,8 @@ export const useStore = create<AppStore>()((set, get) => ({
   suggestions: null,
   gaps: null,
   weakPoints: null,
+  searchQuery: "",
+  searchResults: [],
   aiBusy: null,
   aiReady: false,
   aiChecked: false,
