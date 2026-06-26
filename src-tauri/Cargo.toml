@@ -1,0 +1,57 @@
+[package]
+name = "reason-map"
+version = "0.1.0"
+description = "Local argument-mapping app that helps you advance and adversarially stress-test reasoning chains."
+authors = ["reason-map"]
+edition = "2021"
+rust-version = "1.77"
+
+[lib]
+name = "reason_map_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+tauri = { version = "2", features = [] }
+tauri-plugin-opener = "2"
+
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# `process` + `io-util` let us drive the local `claude` CLI (subprocess + piped stdio) as the
+# LLM transport — the app uses the user's Claude Code login (OAuth/subscription), see src/llm/cli.rs.
+tokio = { version = "1", features = [
+  "macros",
+  "rt-multi-thread",
+  "sync",
+  "time",
+  "process",
+  "io-util",
+] }
+
+# Local source of truth. Runtime-checked queries (no DATABASE_URL needed at build).
+sqlx = { version = "0.8", default-features = false, features = [
+  "runtime-tokio",
+  "sqlite",
+  "macros",
+  "migrate",
+  "chrono",
+] }
+
+ulid = "1"
+chrono = { version = "0.4", features = ["serde"] }
+thiserror = "2"
+anyhow = "1"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Local embedding model — optional, pulled in only by the `local-embeddings` feature.
+fastembed = { version = "4", optional = true }
+
+[features]
+# Local embedding model (fastembed/ONNX) pulls a heavy native runtime; gated so the
+# core build/self-check stays fast and offline. The embedding subsystem is fully wired
+# behind the `Embedder` trait regardless — see src/embeddings/.
+local-embeddings = ["dep:fastembed"]
