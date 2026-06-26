@@ -152,8 +152,17 @@ export const useStore = create<AppStore>()((set, get) => ({
   init: async () => {
     await get().refreshAiStatus();
     await get().refreshMaps();
-    const first = get().maps[0];
-    if (first) await get().openMap(first.id);
+    // Reopen the last map the user had open (SPEC §7.7), falling back to the first.
+    const maps = get().maps;
+    let target = maps[0];
+    try {
+      const lastId = await ipc.getSetting(LAST_MAP_KEY);
+      const last = lastId && maps.find((m) => m.id === lastId);
+      if (last) target = last;
+    } catch {
+      // settings read is best-effort; first map is a fine fallback
+    }
+    if (target) await get().openMap(target.id);
   },
 
   refreshAiStatus: async () => {
@@ -177,7 +186,10 @@ export const useStore = create<AppStore>()((set, get) => ({
       suggestions: null,
       gaps: null,
       weakPoints: null,
+      searchQuery: "",
+      searchResults: [],
     });
+    void ipc.setSetting(LAST_MAP_KEY, id); // remember across launches (best-effort)
     await get().refreshGraph();
   },
 
@@ -309,6 +321,68 @@ export const useStore = create<AppStore>()((set, get) => ({
     await ipc.deleteEdge(id);
     set({ selectedEdgeId: null });
     await get().refreshGraph();
+  },
+
+  setEdgeType: async (id, edgeType) => {
+    await ipc.setEdgeType(id, edgeType);
+    await get().refreshGraph();
+  },
+
+  setEdgeStrength: async (id, strength) => {
+    await ipc.setEdgeStrength(id, strength);
+    await get().refreshGraph();
+  },
+
+  runSearch: async (query) => {
+    const mapId = get().currentMapId;
+    set({ searchQuery: query });
+    if (!mapId || query.trim().length === 0) {
+      set({ searchResults: [] });
+      return;
+    }
+    try {
+      const res = await ipc.semanticSearch(mapId, query); // falls back to FTS in the backend
+      set({ searchResults: res });
+    } catch (e) {
+      set({ error: String(e), searchResults: [] });
+    }
+  },
+
+  clearSearch: () => set({ searchQuery: "", searchResults: [] }),
+  dismissWeakPoints: () => set({ weakPoints: null }),
+
+  // A chat answer becomes a real claim: marked AI-accepted (visible provenance, SPEC §7.6)
+  // and wired up from whatever nodes were feeding the chat context.
+  addNodeFromChat: async (text) => {
+    const focus = get().selectedNodeIds;
+    const base = get().graph?.nodes.find((n) => n.id === focus[0]);
+    const x = (base?.x ?? 240) + 80;
+    const y = (base?.y ?? 160) + 200;
+    const newId = await get().addNode(text, "open", x, y);
+    if (!newId) return;
+    const mapId = get().currentMapId!;
+    for (const f of focus) await ipc.createEdge({ mapId, fromNode: f, toNode: newId });
+    await ipc.setNodeOrigin(newId, "ai_accepted");
+    await get().refreshGraph();
+  },
+
+  exportCurrentMap: async () => {
+    const id = get().currentMapId;
+    if (!id) return;
+    try {
+      const json = await ipc.exportMap(id);
+      const title = get().maps.find((m) => m.id === id)?.title || "map";
+      const safe = title.replace(/[^\w一-龥-]+/g, "_");
+      const blob = new Blob([json], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${safe}.argmap.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      set({ error: String(e) });
+    }
   },
 
   runForwardInference: async () => {

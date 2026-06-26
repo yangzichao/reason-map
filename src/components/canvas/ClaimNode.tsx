@@ -47,7 +47,10 @@ function ClaimNodeView({ data, selected }: NodeProps) {
     "claim-node",
     selected ? "selected" : "",
     dimmed ? "dimmed" : "",
-    isWeak && meta.glow ? "weak-glow" : "",
+    // Risk is always visible: bet/assumption glow on their own (SPEC §7.4), and a node that
+    // is also a structural weak link glows stronger.
+    meta.glow ? "weak-glow" : "",
+    meta.glow && isWeak ? "weak-strong" : "",
     circular ? "circular" : "",
   ]
     .filter(Boolean)

@@ -15,7 +15,8 @@ export default function ChatPanel() {
   const currentMapId = useStore((s) => s.currentMapId);
   const selectedNodeIds = useStore((s) => s.selectedNodeIds);
   const graph = useStore((s) => s.graph);
-  const addNode = useStore((s) => s.addNode);
+  const addNodeFromChat = useStore((s) => s.addNodeFromChat);
+  const selectNode = useStore((s) => s.selectNode);
   const aiReady = useStore((s) => s.aiReady);
 
   const [messages, setMessages] = useState<Msg[]>([]);
@@ -48,9 +49,9 @@ export default function ChatPanel() {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
 
-  const contextLabels = selectedNodeIds
-    .map((id) => graph?.nodes.find((n) => n.id === id)?.text)
-    .filter(Boolean) as string[];
+  const contextNodes = selectedNodeIds
+    .map((id) => graph?.nodes.find((n) => n.id === id))
+    .filter(Boolean) as { id: string; text: string }[];
 
   const streaming = streamingIndex !== null;
 
@@ -89,12 +90,19 @@ export default function ChatPanel() {
   return (
     <div className="chat">
       <div className="chat-context">
-        {contextLabels.length > 0 ? (
+        {contextNodes.length > 0 ? (
           <>
             <span className="muted">上下文:</span>
-            {contextLabels.map((t, i) => (
-              <span key={i} className="ctx-chip" title={t}>
-                {t.length > 14 ? t.slice(0, 14) + "…" : t}
+            {contextNodes.map((n) => (
+              <span key={n.id} className="ctx-chip" title={n.text}>
+                {n.text.length > 14 ? n.text.slice(0, 14) + "…" : n.text}
+                <button
+                  className="ctx-chip-x"
+                  title="从上下文移除"
+                  onClick={() => selectNode(n.id, true)}
+                >
+                  ×
+                </button>
               </span>
             ))}
           </>
@@ -113,7 +121,15 @@ export default function ChatPanel() {
           <div key={i} className={`chat-msg ${m.role}`}>
             <div className="chat-bubble">{m.content || (i === streamingIndex ? "…" : "")}</div>
             {m.role === "assistant" && m.content && i !== streamingIndex && (
-              <button className="chat-add" onClick={() => void addNode(m.content, "open")}>
+              <button
+                className="chat-add"
+                title={
+                  contextNodes.length > 0
+                    ? "作为 AI 节点加入,并连到当前上下文节点"
+                    : "作为 AI 节点加入画布"
+                }
+                onClick={() => void addNodeFromChat(m.content)}
+              >
                 + 加到画布
               </button>
             )}

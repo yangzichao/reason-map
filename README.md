@@ -7,7 +7,7 @@
 - **Tauri 2**(Rust 内核 + 系统 webview)— 原生桌面 app
 - **React + TypeScript + React Flow** — 画布
 - **SQLite**(Rust 侧 `sqlx`,WAL + FTS5 + sqlite-vec)— 本地真源
-- **官方 Anthropic API**(`claude-opus-4-8`,streaming + adaptive thinking)— API key 存 OS keychain
+- **本机 Claude Code 登录态**(`claude-opus-4-8`,streaming)— 通过官方 `claude` CLI 子进程驱动,**无需 API key**(用你的订阅登录,见 SPEC §6)
 - 本地 embedding(fastembed/ONNX)在 `local-embeddings` feature 后
 
 ## 开发
@@ -19,7 +19,7 @@ cd src-tauri && cargo test # 后端单测 + repo round-trip
 npm run tauri dev          # 跑起来(需先装 Tauri 系统依赖)
 ```
 
-首次启动:在设置(⚙)里填 Anthropic API key;会自动载入一张示例论证图。
+首次启动:会自动载入一张示例论证图。AI 功能需要本机装好 Claude Code 并已 `claude login`(无需在 app 内填 key);后端是否就绪可在设置(⚙)里查看。
 
 ## 结构
 
@@ -34,8 +34,8 @@ src-tauri/src/           后端(Rust)
   db/  migrations/       SQLite 连接 + schema
   repo/                  持久化(每实体一文件)
   analysis/              结构分析(承重 / 最弱环节 / 循环论证)— 派生,不入库
-  llm/                   Anthropic 客户端 + prompts(前向/缺口/对抗/对话)
+  llm/                   本机 claude CLI 驱动 + prompts(前向/缺口/对抗/对话)
   embeddings/            Embedder trait(本地模型在 feature 后)
-  secrets.rs             keychain
   commands/              Tauri 命令面
+  seed.rs                首启动示例图
 ```

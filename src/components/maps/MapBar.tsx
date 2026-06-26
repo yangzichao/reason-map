@@ -14,6 +14,7 @@ export default function MapBar() {
   const newMap = useStore((s) => s.newMap);
   const renameMap = useStore((s) => s.renameMap);
   const deleteMap = useStore((s) => s.deleteMap);
+  const exportCurrentMap = useStore((s) => s.exportCurrentMap);
 
   const [dialog, setDialog] = useState<Dialog>(null);
   const current = maps.find((m) => m.id === currentMapId) ?? null;
@@ -49,6 +50,14 @@ export default function MapBar() {
         onClick={() => current && setDialog({ mode: "delete", id: current.id, title: current.title })}
       >
         🗑
+      </button>
+      <button
+        className="btn ghost"
+        title="导出为 .argmap.json(分享 / git / diff)"
+        disabled={!current}
+        onClick={() => void exportCurrentMap()}
+      >
+        ⬇
       </button>
 
       {dialog?.mode === "rename" && (

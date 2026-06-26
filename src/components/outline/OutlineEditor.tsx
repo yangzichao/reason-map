@@ -25,10 +25,10 @@ export default function OutlineEditor() {
   const graph = useStore((s) => s.graph);
   const currentMapId = useStore((s) => s.currentMapId);
   const refreshGraph = useStore((s) => s.refreshGraph);
-  const setView = useStore((s) => s.setView);
   const setError = useStore((s) => s.setError);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [status, setStatus] = useState("");
 
   // Read-only outline of what's already on the canvas, for orientation.
   const existing = useMemo(() => {
@@ -40,10 +40,15 @@ export default function OutlineEditor() {
     if (!currentMapId || !text.trim()) return;
     setBusy(true);
     setError(null);
+    // Skip claims whose exact text already exists, so re-applying an edited outline doesn't
+    // duplicate the whole map (you can iterate in text and re-add safely).
+    const existingTexts = new Set((graph?.nodes ?? []).map((n) => n.text.trim()));
+    let added = 0;
+    let skipped = 0;
     try {
       const lines = text.split("\n");
       const stack: { level: number; id: string }[] = [];
-      let row = 0;
+      let row = (graph?.nodes.length ?? 0);
       for (const raw of lines) {
         if (!raw.trim()) continue;
         const level = indentOf(raw);
@@ -55,6 +60,10 @@ export default function OutlineEditor() {
           body = body.slice(1).trim();
         }
         if (!body) continue;
+        if (existingTexts.has(body)) {
+          skipped += 1;
+          continue;
+        }
         const node = await ipc.createNode({
           mapId: currentMapId,
           text: body,
@@ -62,6 +71,8 @@ export default function OutlineEditor() {
           x: 120 + level * 60,
           y: 80 + row * 110,
         });
+        existingTexts.add(body);
+        added += 1;
         row += 1;
         while (stack.length && stack[stack.length - 1].level >= level) stack.pop();
         const parent = stack[stack.length - 1];
@@ -75,9 +86,10 @@ export default function OutlineEditor() {
         }
         stack.push({ level, id: node.id });
       }
-      setText("");
       await refreshGraph();
-      setView("graph");
+      // Stay in text mode (don't yank the user to the canvas) and keep the draft so they can
+      // keep refining; the dup-skip above makes re-applying harmless.
+      setStatus(`已添加 ${added} 条${skipped ? ` · 跳过 ${skipped} 条重复` : ""}`);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -96,12 +108,22 @@ export default function OutlineEditor() {
           className="outline-text"
           placeholder={"我应该投入做 reason-map\n  !本地+Claude 能做出差异化\n  ~现有工具没把对抗做进去"}
           value={text}
-          onChange={(e) => setText(e.target.value)}
+          onChange={(e) => {
+            setText(e.target.value);
+            if (status) setStatus("");
+          }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+              e.preventDefault();
+              void apply();
+            }
+          }}
         />
         <div className="outline-actions">
           <button className="btn primary" disabled={busy || !text.trim()} onClick={apply}>
-            {busy ? "添加中…" : "添加到图 →"}
+            {busy ? "添加中…" : "添加到图 (⌘↵)"}
           </button>
+          {status && <span className="muted small">{status}</span>}
         </div>
       </div>
       <div className="outline-existing">

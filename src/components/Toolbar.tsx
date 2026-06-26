@@ -4,6 +4,7 @@
 import { useStore } from "@/state/store";
 import BrandLogo from "./BrandLogo";
 import MapBar from "./maps/MapBar";
+import SearchBox from "./search/SearchBox";
 
 export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void }) {
   const view = useStore((s) => s.view);
@@ -26,6 +27,17 @@ export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void
 
   const aiDisabled = !aiReady || !!aiBusy;
 
+  // Tell the user WHY a button is greyed out and what to select (discoverability).
+  const aiHint = !aiReady
+    ? "AI 后端未就绪 — 见右上角 ⚙"
+    : selected.length === 0 && !selectedEdge
+      ? "选 1 个节点 → 推演 / 攻击;选 2 个 → 缺口检测;选边 → 攻这步推理"
+      : selected.length === 1
+        ? "可前向推演 / 对抗;再选一个做缺口检测"
+        : selected.length === 2
+          ? "可缺口检测(从 → 到)"
+          : "";
+
   return (
     <div className="toolbar">
       <div className="toolbar-left">
@@ -36,6 +48,7 @@ export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void
           <span className="brand-name">reason·map</span>
         </div>
         <MapBar />
+        <SearchBox />
         <div className="view-toggle">
           <button className={view === "graph" ? "on" : ""} onClick={() => setView("graph")}>
             画布
@@ -78,14 +91,18 @@ export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void
         >
           多视角
         </button>
-        <button className="btn" disabled={aiDisabled} onClick={() => void runWeak()}>
+        <button className="btn" disabled={aiDisabled} onClick={() => void runWeak()} title="让 Claude 扫整张图最该补的弱点">
           扫弱点
         </button>
-        {aiBusy && <span className="ai-spinner">Claude 思考中…</span>}
+        {aiBusy ? (
+          <span className="ai-spinner">Claude 思考中…</span>
+        ) : (
+          aiHint && <span className="ai-hint muted small">{aiHint}</span>
+        )}
       </div>
 
       <div className="toolbar-right">
-        <button className="btn ghost" onClick={onOpenSettings} title="设置 / API key">
+        <button className="btn ghost" onClick={onOpenSettings} title="设置 / 本机 Claude Code 登录态">
           ⚙
         </button>
       </div>
