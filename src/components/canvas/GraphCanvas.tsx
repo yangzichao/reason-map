@@ -90,7 +90,7 @@ export default function GraphCanvas() {
             strokeDasharray: e.edgeType === "rebut" ? "6 4" : undefined,
           },
           labelStyle: { fill: meta.color, fontSize: 11, opacity: dim ? 0.2 : 1 },
-          labelBgStyle: { fill: "#0f172a", opacity: dim ? 0.2 : 0.85 },
+          labelBgStyle: { fill: "#f6f8f1", opacity: dim ? 0.2 : 0.92 },
         } as Edge;
       }),
     );
@@ -117,9 +117,9 @@ export default function GraphCanvas() {
       minZoom={0.2}
       maxZoom={2}
     >
-      <Background color="#1e293b" gap={20} />
+      <Background color="#cdd4c2" gap={20} />
       <Controls showInteractive={false} />
-      <MiniMap pannable zoomable nodeColor="#334155" maskColor="rgba(2,6,23,0.7)" />
+      <MiniMap pannable zoomable nodeColor="#b3bca6" maskColor="rgba(35,42,34,0.08)" />
     </ReactFlow>
   );
 }

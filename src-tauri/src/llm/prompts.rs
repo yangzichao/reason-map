@@ -1,7 +1,7 @@
 //! Prompt construction. The graph is serialized into a compact, token-frugal outline so
 //! Claude has the full argument as context for every operation (SPEC §7.9).
 
-use crate::domain::{Edge, MapGraph, Node};
+use crate::domain::{ChatMessage, ChatRole, Edge, MapGraph, Node};
 
 /// Compact textual rendering of a node: `[id | status] text`.
 fn node_line(n: &Node) -> String {
@@ -117,4 +117,30 @@ pub fn chat_system(graph: &MapGraph, focus: &[String]) -> String {
          can be dragged onto the canvas.\n\n{}",
         serialize_context(graph, focus)
     )
+}
+
+/// Build the user turn with the recent conversation prepended so the model has memory of
+/// the thread (the CLI is single-shot per call, so history must be re-sent each turn).
+pub fn chat_user_with_history(history: &[ChatMessage], user_message: &str) -> String {
+    const MAX_TURNS: usize = 12;
+    let recent = if history.len() > MAX_TURNS {
+        &history[history.len() - MAX_TURNS..]
+    } else {
+        history
+    };
+    if recent.is_empty() {
+        return user_message.to_string();
+    }
+    let mut out = String::from("对话历史(从旧到新):\n");
+    for m in recent {
+        let who = match m.role {
+            ChatRole::User => "用户",
+            ChatRole::Assistant => "助手",
+            ChatRole::System => "系统",
+        };
+        out.push_str(&format!("{who}: {}\n", m.content));
+    }
+    out.push_str("\n当前这一轮的问题:\n");
+    out.push_str(user_message);
+    out
 }

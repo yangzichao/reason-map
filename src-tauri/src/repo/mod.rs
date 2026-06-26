@@ -3,6 +3,7 @@
 pub mod challenges;
 pub mod chat;
 pub mod edges;
+pub mod evidence;
 pub mod events;
 pub mod history;
 pub mod maps;

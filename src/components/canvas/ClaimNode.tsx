@@ -21,8 +21,13 @@ function ClaimNodeView({ data, selected }: NodeProps) {
   const cycleStatus = useStore((s) => s.cycleStatus);
 
   const [editing, setEditing] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [draft, setDraft] = useState(node.text);
   const ref = useRef<HTMLTextAreaElement>(null);
+
+  // Long pasted text (e.g. a whole chat reply) would otherwise stretch the node into a
+  // giant blob. Clamp to a few lines by default and let the user expand on demand.
+  const isLong = node.text.length > 140 || node.text.split("\n").length > 4;
 
   useEffect(() => {
     if (editing) ref.current?.focus();
@@ -92,9 +97,25 @@ function ClaimNodeView({ data, selected }: NodeProps) {
           }}
         />
       ) : (
-        <div className="claim-text" onDoubleClick={() => setEditing(true)}>
-          {node.text}
-        </div>
+        <>
+          <div
+            className={`claim-text${isLong && !expanded ? " clamped" : ""}`}
+            onDoubleClick={() => setEditing(true)}
+          >
+            {node.text}
+          </div>
+          {isLong && (
+            <button
+              className="claim-toggle"
+              onClick={(e) => {
+                e.stopPropagation();
+                setExpanded((v) => !v);
+              }}
+            >
+              {expanded ? "收起" : "展开"}
+            </button>
+          )}
+        </>
       )}
 
       <Handle type="source" position={Position.Bottom} />

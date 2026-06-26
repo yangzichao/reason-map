@@ -2,6 +2,7 @@
 
 pub mod ai;
 pub mod challenges;
+pub mod evidence;
 pub mod graph_edit;
 pub mod maps;
 pub mod misc;

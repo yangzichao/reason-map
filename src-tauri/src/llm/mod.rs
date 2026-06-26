@@ -87,17 +87,20 @@ pub async fn scan_weak_points(
     Ok(parse::<WeakPointsWrap>(&text)?.weak_points)
 }
 
-/// Stream a chat turn, invoking `on_event` for each delta and on completion.
+/// Stream a chat turn, invoking `on_event` for each delta and on completion. `history` is
+/// the prior turns for this map (re-sent each call so the single-shot CLI has memory).
 pub async fn chat_stream<F: FnMut(StreamEvent)>(
     client: &ClaudeCli,
     graph: &MapGraph,
     focus: &[String],
+    history: &[crate::domain::ChatMessage],
     user_message: &str,
     mut on_event: F,
 ) -> AppResult<String> {
     let system = prompts::chat_system(graph, focus);
+    let prompt = prompts::chat_user_with_history(history, user_message);
     let full = client
-        .stream_text(&system, user_message, 4000, true, |delta| {
+        .stream_text(&system, &prompt, 4000, true, |delta| {
             on_event(StreamEvent::Delta {
                 text: delta.to_string(),
             })

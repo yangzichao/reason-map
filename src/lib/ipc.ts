@@ -10,6 +10,8 @@ import type {
   ChatMessageRow,
   ClaimNode,
   EdgeType,
+  Evidence,
+  EvidenceKind,
   GapNode,
   MapDoc,
   MapGraph,
@@ -28,6 +30,7 @@ export const listMaps = () => invoke<MapDoc[]>("list_maps");
 export const createMap = (title: string) => invoke<MapDoc>("create_map", { title });
 export const renameMap = (id: string, title: string) => invoke<MapDoc>("rename_map", { id, title });
 export const deleteMap = (id: string) => invoke<void>("delete_map", { id });
+export const exportMap = (id: string) => invoke<string>("export_map", { id });
 export const loadGraph = (mapId: string) => invoke<MapGraph>("load_graph", { mapId });
 export const analyzeMap = (mapId: string) => invoke<NodeCriticality[]>("analyze_map", { mapId });
 export const detectCircular = (mapId: string) => invoke<string[]>("detect_circular", { mapId });
@@ -75,6 +78,12 @@ export const challengesForTarget = (targetId: string) =>
 export const judgeChallenge = (id: string, status: ChallengeStatus, userNote?: string) =>
   invoke<Challenge>("judge_challenge", { id, status, userNote: userNote ?? null });
 export const promoteChallenge = (id: string) => invoke<ClaimNode>("promote_challenge", { id });
+
+// --- evidence ---
+export const listEvidence = (nodeId: string) => invoke<Evidence[]>("list_evidence", { nodeId });
+export const addEvidence = (nodeId: string, kind: EvidenceKind, payload: string) =>
+  invoke<Evidence>("add_evidence", { nodeId, kind, payload });
+export const deleteEvidence = (id: string) => invoke<void>("delete_evidence", { id });
 
 // --- ai (staging) ---
 export const forwardInference = (mapId: string, focusNodeIds: string[]) =>

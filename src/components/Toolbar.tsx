@@ -2,12 +2,10 @@
 // focus mode, and settings.
 
 import { useStore } from "@/state/store";
+import BrandLogo from "./BrandLogo";
+import MapBar from "./maps/MapBar";
 
 export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void }) {
-  const maps = useStore((s) => s.maps);
-  const currentMapId = useStore((s) => s.currentMapId);
-  const openMap = useStore((s) => s.openMap);
-  const newMap = useStore((s) => s.newMap);
   const view = useStore((s) => s.view);
   const setView = useStore((s) => s.setView);
   const focusMode = useStore((s) => s.focusMode);
@@ -31,20 +29,13 @@ export default function Toolbar({ onOpenSettings }: { onOpenSettings: () => void
   return (
     <div className="toolbar">
       <div className="toolbar-left">
-        <select
-          className="map-select"
-          value={currentMapId ?? ""}
-          onChange={(e) => void openMap(e.target.value)}
-        >
-          {maps.map((m) => (
-            <option key={m.id} value={m.id}>
-              {m.title}
-            </option>
-          ))}
-        </select>
-        <button className="btn ghost" title="新建图" onClick={() => void newMap("Untitled")}>
-          ＋
-        </button>
+        <div className="brand" title="reason·map">
+          <span className="brand-mark" style={{ color: "var(--accent)" }}>
+            <BrandLogo size={22} />
+          </span>
+          <span className="brand-name">reason·map</span>
+        </div>
+        <MapBar />
         <div className="view-toggle">
           <button className={view === "graph" ? "on" : ""} onClick={() => setView("graph")}>
             画布

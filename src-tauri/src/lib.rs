@@ -50,6 +50,7 @@ pub fn run() {
             commands::maps::create_map,
             commands::maps::rename_map,
             commands::maps::delete_map,
+            commands::maps::export_map,
             commands::maps::load_graph,
             commands::maps::analyze_map,
             commands::maps::detect_circular,
@@ -70,6 +71,10 @@ pub fn run() {
             commands::challenges::challenges_for_target,
             commands::challenges::judge_challenge,
             commands::challenges::promote_challenge,
+            // evidence
+            commands::evidence::list_evidence,
+            commands::evidence::add_evidence,
+            commands::evidence::delete_evidence,
             // ai
             commands::ai::forward_inference,
             commands::ai::detect_gap,

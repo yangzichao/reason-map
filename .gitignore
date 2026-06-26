@@ -14,3 +14,8 @@ src-tauri/gen/
 # os / editor
 .DS_Store
 *.log
+
+# 全局 ~/.gitignore_global 的 macOS `Icon?` 规则在大小写不敏感的文件系统上
+# 会误伤整个 src-tauri/icons 目录,这里显式恢复跟踪 app 图标。
+!src-tauri/icons/
+!src-tauri/icons/**

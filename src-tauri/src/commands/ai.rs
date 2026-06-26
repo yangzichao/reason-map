@@ -103,15 +103,19 @@ pub async fn chat(
     on_event: Channel<StreamEvent>,
 ) -> AppResult<()> {
     let graph = repo::maps::graph(&state.db, &map_id).await?;
+    // Load prior turns BEFORE appending this one, so the model gets conversational memory
+    // without seeing the current question duplicated in the transcript.
+    let history = repo::chat::history(&state.db, &map_id).await?;
     repo::chat::append(&state.db, &map_id, ChatRole::User, &message, &context_node_ids).await?;
 
     // chat_stream emits Done/Error on the channel itself, so a failure is already surfaced
     // to the frontend; don't also reject the invoke promise (nit.3). Persist the assistant
     // turn only on success.
-    if let Ok(full) = llm::chat_stream(&state.llm, &graph, &context_node_ids, &message, |ev| {
-        let _ = on_event.send(ev);
-    })
-    .await
+    if let Ok(full) =
+        llm::chat_stream(&state.llm, &graph, &context_node_ids, &history, &message, |ev| {
+            let _ = on_event.send(ev);
+        })
+        .await
     {
         repo::chat::append(
             &state.db,

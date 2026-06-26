@@ -55,6 +55,8 @@ interface AppStore {
   refreshMaps: () => Promise<void>;
   openMap: (id: string) => Promise<void>;
   newMap: (title: string) => Promise<void>;
+  renameMap: (id: string, title: string) => Promise<void>;
+  deleteMap: (id: string) => Promise<void>;
   refreshGraph: () => Promise<void>;
 
   selectNode: (id: string, additive: boolean) => void;
@@ -166,6 +168,29 @@ export const useStore = create<AppStore>()((set, get) => ({
     const m = await ipc.createMap(title || "Untitled");
     await get().refreshMaps();
     await get().openMap(m.id);
+  },
+
+  renameMap: async (id, title) => {
+    const trimmed = title.trim();
+    if (!trimmed) return;
+    await ipc.renameMap(id, trimmed);
+    await get().refreshMaps();
+    // Keep the open graph's embedded title in sync so views reading graph.map don't go stale.
+    set((s) =>
+      s.graph && s.graph.map.id === id
+        ? { graph: { ...s.graph, map: { ...s.graph.map, title: trimmed } } }
+        : {},
+    );
+  },
+
+  deleteMap: async (id) => {
+    await ipc.deleteMap(id);
+    await get().refreshMaps();
+    if (get().currentMapId !== id) return;
+    // Deleted the open map: fall back to another, or start fresh so the canvas is never orphaned.
+    const next = get().maps[0];
+    if (next) await get().openMap(next.id);
+    else await get().newMap("Untitled");
   },
 
   refreshGraph: async () => {

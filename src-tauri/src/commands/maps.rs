@@ -28,6 +28,27 @@ pub async fn delete_map(state: State<'_, AppState>, id: String) -> AppResult<()>
     repo::maps::soft_delete(&state.db, &id).await
 }
 
+/// Export one map as a self-contained `.argmap.json` document (SPEC §5: JSON is the share /
+/// git / diff format; the DB stays source of truth). Bundles graph + per-node evidence.
+#[tauri::command]
+pub async fn export_map(state: State<'_, AppState>, id: String) -> AppResult<String> {
+    let graph = repo::maps::graph(&state.db, &id).await?;
+    let mut evidence = Vec::new();
+    for node in &graph.nodes {
+        evidence.extend(repo::evidence::for_node(&state.db, &node.id).await?);
+    }
+    let doc = serde_json::json!({
+        "format": "reason-map.argmap",
+        "version": 1,
+        "map": graph.map,
+        "nodes": graph.nodes,
+        "edges": graph.edges,
+        "challenges": graph.challenges,
+        "evidence": evidence,
+    });
+    Ok(serde_json::to_string_pretty(&doc)?)
+}
+
 #[tauri::command]
 pub async fn load_graph(state: State<'_, AppState>, map_id: String) -> AppResult<MapGraph> {
     repo::maps::graph(&state.db, &map_id).await
