@@ -8,14 +8,19 @@ import { autoLayout } from "@/components/canvas/layout";
 import type {
   Challenge,
   ChallengeStatus,
+  ClaimNode,
+  EdgeType,
   GapNode,
   MapDoc,
   MapGraph,
   NodeCriticality,
   NodeStatus,
+  Strength,
   Suggestion,
   WeakPoint,
 } from "@/types/domain";
+
+const LAST_MAP_KEY = "lastMapId";
 
 const STATUS_CYCLE: NodeStatus[] = ["open", "assumption", "bet", "evidenced", "fact"];
 
@@ -43,6 +48,8 @@ interface AppStore {
   suggestions: SuggestionStaging | null;
   gaps: GapStaging | null;
   weakPoints: WeakPoint[] | null;
+  searchQuery: string;
+  searchResults: ClaimNode[];
   aiBusy: string | null; // label of the in-flight AI op, or null
   aiReady: boolean; // the local `claude` CLI backend is available
   aiChecked: boolean; // backend status has been probed at least once
